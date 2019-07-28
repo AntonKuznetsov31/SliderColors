@@ -8,8 +8,15 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+struct Color {
+    var red: Float = 127
+    var green: Float = 127
+    var blue: Float = 127
+    var alpha: Float = 1
+}
 
+class ViewController: UIViewController {
+    
     @IBOutlet weak var mainView: UIView!
     
     @IBOutlet weak var redLabel: UILabel!
@@ -24,36 +31,136 @@ class ViewController: UIViewController {
     @IBOutlet weak var greenTextField: UITextField!
     @IBOutlet weak var blueTextField: UITextField!
     
+    var color = Color()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        updateUI()
+        
+        redTextField.delegate = self
+        greenTextField.delegate = self
+        blueTextField.delegate = self
+        
+        startUIsettings()
+        createToolBar()
     }
     
     @IBAction func redSliderAction() {
-        let valueStr = String(format: "%.2f", redSlider.value)
-        redLabel.text = valueStr
-        redTextField.placeholder = valueStr
+        color.red = redSlider.value
+        changeMainViewColor(color: self.color)
+        updateUI()
     }
     
     @IBAction func greenSliderAction() {
-        let valueStr = String(format: "%.2f", greenSlider.value)
-        greenLabel.text = valueStr
-        greenTextField.placeholder = valueStr
+        color.green = greenSlider.value
+        changeMainViewColor(color: self.color)
+        updateUI()
     }
+   
     
     @IBAction func blueSliderAction() {
-        let valueStr = String(format: "%.2f", blueSlider.value)
-        blueLabel.text = valueStr
-        blueTextField.placeholder = valueStr
+        color.blue = blueSlider.value
+        changeMainViewColor(color: self.color)
+        updateUI()
+    }
+    
+    func startUIsettings() {
+        redSlider.tintColor = .red
+        redSlider.value = color.red
+        greenSlider.tintColor = .green
+        greenSlider.value = color.green
+        blueSlider.tintColor = .blue
+        blueSlider.value = color.blue
+        
+        redLabel.text = "\(Int(color.red))"
+        greenLabel.text = "\(Int(color.green))"
+        blueLabel.text = "\(Int(color.blue))"
+        
+        redTextField.keyboardType = .numberPad
+        redTextField.text = "\(Int(color.red))"
+        greenTextField.keyboardType = .numberPad
+        greenTextField.text = "\(Int(color.green))"
+        blueTextField.keyboardType = .numberPad
+        blueTextField.text = "\(Int(color.blue))"
+        
+        mainView.layer.cornerRadius = mainView.frame.width / 20
+        mainView.layer.shadowColor = UIColor.black.cgColor
+        mainView.layer.shadowOpacity = 0.75
+        mainView.layer.shadowOffset = CGSize(width: 5, height: 5)
+        mainView.layer.borderColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
+        mainView.layer.borderWidth = 1
+        
+        mainView.backgroundColor = UIColor(red: CGFloat(color.red)/255,
+                                           green: CGFloat(color.green)/255,
+                                           blue: CGFloat(color.blue)/255,
+                                           alpha: CGFloat(color.alpha))
+    }
+    
+    func createToolBar() {
+        let toolbar = UIToolbar()
+        toolbar.sizeToFit()
+        let flexibleSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        let doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(self.doneButtonPressed))
+        toolbar.setItems([flexibleSpace, doneButton], animated: true)
+        
+        redTextField.inputAccessoryView = toolbar
+        greenTextField.inputAccessoryView = toolbar
+        blueTextField.inputAccessoryView = toolbar
+    }
+    
+    @objc func doneButtonPressed() {
+        textFieldChangeColor()
+        view.endEditing(true)
+    }
+    
+    func changeMainViewColor(color: Color) {
+        let uiColor = UIColor(red: CGFloat(color.red)/255,
+                              green: CGFloat(color.green)/255,
+                              blue: CGFloat(color.blue)/255,
+                              alpha: CGFloat(color.alpha))
+        mainView.backgroundColor = uiColor
     }
     
     func updateUI() {
-        redSlider.tintColor = .red
-        greenSlider.tintColor = .green
-        blueSlider.tintColor = .blue
-        
-        redLabel.text = "\(redSlider.value)"
-        greenLabel.text = "\(greenSlider.value)"
-        blueLabel.text = "\(blueSlider.value)"
+        let redValueStr = String(format: "%.0f", color.red)
+        let greenValueStr = String(format: "%.0f", color.green)
+        let blueValueStr = String(format: "%.0f", color.blue)
+        redSlider.value = color.red
+        greenSlider.value = color.green
+        blueSlider.value = color.blue
+        redLabel.text = redValueStr
+        redTextField.text = redValueStr
+        greenLabel.text = greenValueStr
+        greenTextField.text = greenValueStr
+        blueLabel.text = blueValueStr
+        blueTextField.text = blueValueStr
     }
+    
+    func textFieldChangeColor() {
+        color.red = Float("\(redTextField.text!)")!
+        color.green = Float("\(greenTextField.text!)")!
+        color.blue = Float("\(blueTextField.text!)")!
+        
+        updateUI()
+        changeMainViewColor(color: self.color)
+    }
+}
+
+extension ViewController: UITextFieldDelegate {
+    
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        let newText = NSString(string: textField.text!).replacingCharacters(in: range, with: string)
+        if newText.isEmpty {
+            return true
+        }
+        else if let floatValue = Float(newText), floatValue <= 255 {
+            return true
+        }
+        return false
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true;
+    }
+    
 }
