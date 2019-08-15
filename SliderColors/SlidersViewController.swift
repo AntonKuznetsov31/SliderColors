@@ -1,5 +1,5 @@
 //
-//  ViewController.swift
+//  SlidersViewController.swift
 //  SliderColors
 //
 //  Created by Anton Kuznetsov on 7/26/19.
@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class SlidersViewController: UIViewController {
     
     // MARK: - IBOutlets
     
@@ -26,6 +26,11 @@ class ViewController: UIViewController {
     @IBOutlet weak var greenTextField: UITextField!
     @IBOutlet weak var blueTextField: UITextField!
     
+    // MARK: - Public Properties
+    
+    var delegate: ViewDelegate?
+    var colorFromMainVC: UIColor!
+    
     // MARK: - Lifecycle
     
     override func viewDidLoad() {
@@ -34,12 +39,14 @@ class ViewController: UIViewController {
         redTextField.delegate = self
         greenTextField.delegate = self
         blueTextField.delegate = self
+        delegate = MainViewController()
         
         redSlider.tintColor = .red
         greenSlider.tintColor = .green
         blueSlider.tintColor = .blue
         
         setMainView()
+        setValueForSlider()
         setValueForLabel()
         setValueForTextField()
         
@@ -64,6 +71,7 @@ class ViewController: UIViewController {
         default:
             break
         }
+        
         setColor()
     }
     
@@ -76,17 +84,16 @@ class ViewController: UIViewController {
         colorView.layer.shadowOffset = CGSize(width: 5, height: 5)
         colorView.layer.borderColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
         colorView.layer.borderWidth = 1
-        colorView.backgroundColor = UIColor(red: CGFloat(redSlider.value)/255,
-                                           green: CGFloat(greenSlider.value)/255,
-                                           blue: CGFloat(blueSlider.value)/255,
-                                           alpha: 1)
+        colorView.backgroundColor = colorFromMainVC
     }
     
-    private func setColor() {
-        colorView.backgroundColor = UIColor(red: CGFloat(redSlider.value),
-                                            green: CGFloat(greenSlider.value),
-                                            blue: CGFloat(blueSlider.value),
-                                            alpha: 1)
+    func setColor() {
+        let color = UIColor(red: CGFloat(redSlider.value),
+                            green: CGFloat(greenSlider.value),
+                            blue: CGFloat(blueSlider.value),
+                            alpha: 1)
+        colorView.backgroundColor = color
+        delegate?.setColor(color)
     }
     
     private func setValueForLabel() {
@@ -101,12 +108,49 @@ class ViewController: UIViewController {
         blueTextField.text = string(from: blueSlider)
     }
     
+    private func setValueForSlider() {
+        let ciColor = CIColor(color: colorFromMainVC)
+        redSlider.value = Float(ciColor.red)
+        greenSlider.value = Float(ciColor.green)
+        blueSlider.value = Float(ciColor.blue)
+    }
+    
     private func string(from slider: UISlider) -> String {
         return String(format: "%.2f", slider.value)
     }
 }
 
-extension ViewController: UITextFieldDelegate {
+extension SlidersViewController {
+    
+    private func addDoneButtonTo(_ textField: UITextField) {
+        let keyboardToolbar = UIToolbar()
+        textField.inputAccessoryView = keyboardToolbar
+        keyboardToolbar.sizeToFit()
+        let doneButton = UIBarButtonItem(title:"Done",
+                                         style: .done,
+                                         target: self,
+                                         action: #selector(donePressed))
+        let flexBarButton = UIBarButtonItem(barButtonSystemItem: .flexibleSpace,
+                                            target: nil,
+                                            action: nil)
+        keyboardToolbar.items = [flexBarButton, doneButton]
+    }
+    
+    @objc private func donePressed() {
+        view.endEditing(true)
+    }
+    
+    private func showAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        let okAction = UIAlertAction(title: "OK", style: .default)
+        alert.addAction(okAction)
+        present(alert, animated: true)
+    }
+}
+
+// MARK: - Text field delegate
+
+extension SlidersViewController: UITextFieldDelegate {
     
     func textFieldDidEndEditing(_ textField: UITextField) {
         
@@ -138,32 +182,4 @@ extension ViewController: UITextFieldDelegate {
         view.endEditing(true)
     }
     
-}
-
-extension ViewController {
-    
-    private func addDoneButtonTo(_ textField: UITextField) {
-        let keyboardToolbar = UIToolbar()
-        textField.inputAccessoryView = keyboardToolbar
-        keyboardToolbar.sizeToFit()
-        let doneButton = UIBarButtonItem(title:"Done",
-                                         style: .done,
-                                         target: self,
-                                         action: #selector(donePressed))
-        let flexBarButton = UIBarButtonItem(barButtonSystemItem: .flexibleSpace,
-                                            target: nil,
-                                            action: nil)
-        keyboardToolbar.items = [flexBarButton, doneButton]
-    }
-    
-    @objc private func donePressed() {
-        view.endEditing(true)
-    }
-    
-    private func showAlert(title: String, message: String) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        let okAction = UIAlertAction(title: "OK", style: .default)
-        alert.addAction(okAction)
-        present(alert, animated: true)
-    }
 }
